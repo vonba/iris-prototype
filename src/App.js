@@ -1,23 +1,31 @@
-import logo from './logo.svg';
+// import logo from './logo.svg';
+import { useState } from 'react';
+import NavContainer from './components/NavContainer';
+import VideoContainer from './components/VideoContainer';
+import navTree from './navigationTree';
 import './App.css';
 
 function App() {
+  const [isNavOpen, setIsNavOpen] = useState(false);
+
+    // if (isNavOpen && deltaY < -touchThreshold) {
+    //   setIsNavOpen(false); // Collapse the nav if deltaY is negative and nav is open
+    // } else if (!isNavOpen && deltaY > touchThreshold) {
+    //   setIsNavOpen(true); // Expand the nav if deltaY is positive and nav is closed
+    // }
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div 
+      className="App"
+    >
+      {/* <img src={logo} className="App-logo" alt="logo" /> */}
+      <NavContainer 
+        navTree={navTree}
+        isNavOpen={isNavOpen} 
+        setIsNavOpen={setIsNavOpen} 
+      />
+      <VideoContainer />
     </div>
   );
 }
