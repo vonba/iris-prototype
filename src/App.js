@@ -4,6 +4,7 @@ import NavContainer from './components/NavContainer';
 import VideoContainer from './components/VideoContainer';
 import navTree from './navigationTree';
 import './App.css';
+import ActiveUsers from './components/ActiveUsers';
 
 function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -25,7 +26,8 @@ function App() {
         isNavOpen={isNavOpen} 
         setIsNavOpen={setIsNavOpen} 
       />
-      <VideoContainer />
+      <VideoContainer isNavOpen={isNavOpen} />
+      <ActiveUsers isNavOpen={isNavOpen} />
     </div>
   );
 }

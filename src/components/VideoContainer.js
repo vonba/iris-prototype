@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import styled from "styled-components"
+import { MEDIA } from "../constants";
 
 import playIcon from '../images/play.svg';
 import videoContainerBackground from '../images/video-background.jpg';
-import { useState } from "react";
 
 const VideoContainerStyles = styled.div`
   position: fixed;
@@ -12,7 +13,11 @@ const VideoContainerStyles = styled.div`
   left: 0;
   background: var(--colorPurple) url("${videoContainerBackground}") center no-repeat;
   background-size: cover;
-  padding: 7em 2em 2em 2em;
+  padding: 6em 1em 1em 1em;
+  
+  @media (min-width: ${MEDIA['medium']}) {
+    padding: 7em 2em 2em 2em;
+  }
   
   .videoWrapper {
     width: 100%;
@@ -54,7 +59,7 @@ const VideoContainerStyles = styled.div`
   }
 `;
 
-const VideoContainer = () => {
+const VideoContainer = ({isNavOpen}) => {
   const [initiated, setInitiated] = useState(false);
 
   const handleInitiate = () => {
@@ -62,6 +67,18 @@ const VideoContainer = () => {
     const mainVideo = document.getElementById('mainVideo');
     mainVideo.play();
   }
+  
+  useEffect(() => {
+    const mainVideo = document.getElementById('mainVideo');
+    if (isNavOpen && !mainVideo.paused) {
+      mainVideo.pause();
+      mainVideo.setAttribute('data-play-interrupted', 'true');
+    }
+    if (!isNavOpen && mainVideo.getAttribute('data-play-interrupted') === 'true') {
+      mainVideo.play();
+      mainVideo.setAttribute('data-play-interrupted', 'false');
+    }
+  }, [isNavOpen])
 
   return <VideoContainerStyles>
     {/* TODO: click to start */}

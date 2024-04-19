@@ -5,18 +5,25 @@ import styled from "styled-components";
 import navContainerBackground from '../images/nav-background.png';
 import unfoldMore from '../images/unfold-more.svg';
 import unfoldLess from '../images/unfold-less.svg';
+import { MEDIA } from "../constants";
 
 const NavContainerStyles = styled.div`
   position: fixed;
-  z-index: 99;
-  width: calc(100% - 4em);
+  z-index: 9;
+  width: calc(100% - 2em);
   border-radius: var(--defaultRadius);
-  top: 2em;
-  left: 2em;
+  top: 1em;
+  left: 1em;
   overflow: hidden;
   transition: height 0.5s;
   background: var(--colorPurple) url("${navContainerBackground}") center no-repeat;
   background-size: cover;
+
+  @media (min-width: ${MEDIA['medium']}) {
+    top: 2em;
+    left: 2em;
+    width: calc(100% - 4em);
+  }
 
   .toggleNavigation {
     position: absolute;
@@ -96,7 +103,11 @@ const NavContainerStyles = styled.div`
   }
 
   &.open {
-    height: calc(100vh - 4em);
+    height: calc(100vh - 2em);
+    
+    @media (min-width: ${MEDIA['medium']}) {
+      height: calc(100vh - 4em);
+    }
 
     .toggleNavigation {
       border-top-left-radius: var(--defaultRadius);
@@ -111,11 +122,9 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
 
   const [startXY, setStartXY] = useState([0,0]);
   const [dragStarted, setDragStarted] = useState(false);
+  const [expandedBranch, setExpandedBranch] = useState(null);
 
-  const showNavItem = (navItem) => {
-    return <NavItem navItem={navItem} isNavOpen={isNavOpen} />
-  }
-
+  // ==== Handle map drag interactions ====
   const handleStart = (e) => {
     // Exclude right mouse button click
     if (e.button !== undefined && e.button !== 0) {
@@ -172,17 +181,11 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
   };
 
   const handleNavToggle = () => {
-    if (isNavOpen) {
-      // Reset position when closing
-      const treeWrapper = document.querySelector('.treeWrapper');
-      treeWrapper.style.left = '0px';
-      treeWrapper.style.top = '0px';
-    }
     setIsNavOpen(!isNavOpen);
   }
 
   const handleWheel = (e) => {
-    e.preventDefault(); // Prevent default scrolling behavior
+    // e.preventDefault(); // Prevent default scrolling behavior
   
     // Modify treeWrapper's position based on the wheel delta
     const treeWrapper = document.querySelector('.treeWrapper');
@@ -192,12 +195,13 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     }
   };
   
-  // Touchmove event for touchpad
   const handleTouchMove = (e) => {
     handleMove(e, true);
   };
 
-  // Navigation matrix
+  // ===== End interaction handlers ====
+
+  // Format navigation grid
   const navColumns = navTree[0].length;
   const navRows = navTree.length;
   const treeGridStyles = {
@@ -205,7 +209,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     gridTemplateRows: `repeat(${navRows}, auto)`
   };
 
-  // Set size and position of links
+  // Set size and position of link elements when any expanded state changes
   useEffect(() => {
     const setLinkBoxPosition = () => {
       const linkBoxes = document.querySelectorAll('.cell-link');
@@ -266,6 +270,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
               height = parentBox.top - top;
               width = childBox.left - parentBox.left - horizontalTuck - gap;
               break;
+            default: break;
           }
         
           // Set styles
@@ -279,20 +284,29 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
 
     setLinkBoxPosition();
 
-    window.addEventListener('resize', setLinkBoxPosition);
+    if (!isNavOpen) {
+      // Reset position when closing
+      const treeWrapper = document.querySelector('.treeWrapper');
+      treeWrapper.style.left = '0px';
+      treeWrapper.style.top = '0px';
+    }
 
-    return () => {
-      window.removeEventListener('resize', setLinkBoxPosition);
-    };
-  }, [isNavOpen]);
+    // Update on resize (currently disabled)
+    // window.addEventListener('resize', setLinkBoxPosition);
+    // return () => {
+    //   window.removeEventListener('resize', setLinkBoxPosition);
+    // };
+  }, [isNavOpen, expandedBranch]);
 
   return (
     <NavContainerStyles
       id="navContainer"
       className={isNavOpen ? 'open' : 'closed'}
       onMouseDown={handleStart}
+      onTouchStart={handleStart}
       onMouseMove={handleMove}
       onMouseUp={handleEnd}
+      onTouchEnd={handleEnd}
       onTouchMove={handleTouchMove}
       onWheel={handleWheel}
       // onTouchStart={handleStart}
@@ -303,9 +317,24 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
           {/* {navTree.map(navItem => showNavItem(navItem))} */}
           {navTree.map((navRow, indexRow) => {
             return navRow.map((navItem, indexColumn) => {
+              const navItemId = `cell-${indexColumn + 1}-${indexRow + 1}`;
               return <>
-                {!navItem.name ? <div className="empty-cell" id={`cell-${indexColumn + 1}-${indexRow + 1}`} key={`cell-${indexColumn + 1}-${indexRow + 1}`} /> : null}
-                {navItem.name ? <NavItem navItem={navItem} isNavOpen={isNavOpen} id={`cell-${indexColumn + 1}-${indexRow + 1}`} key={`cell-${indexColumn + 1}-${indexRow + 1}`} /> : null}
+                
+                {/* Add a navigation item in this cell */}
+                {navItem.name 
+                  ? <NavItem 
+                      navItem={navItem} 
+                      isNavOpen={isNavOpen}
+                      setIsNavOpen={setIsNavOpen}
+                      id={navItemId} 
+                      key={navItemId}
+                      expandedBranch={expandedBranch}
+                      setExpandedBranch={setExpandedBranch}
+                    /> 
+                  : null
+                }
+                
+                {/* If this item has children, add link elements */}
                 {navItem.children ? navItem.children.map((child, index) => {
                   if (!child) return null;
                   const corners = {
@@ -324,6 +353,9 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
                     data-child-id={`cell-${child[0]}-${child[1]}`}
                   />;
                 }) : null}
+
+                {/* Nothing in this cell, add an empty cell */}
+                {!navItem.name ? <div className="empty-cell" id={`cell-${indexColumn + 1}-${indexRow + 1}`} key={`cell-${indexColumn + 1}-${indexRow + 1}`} /> : null}
               </>
             })
           })}
