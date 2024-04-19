@@ -16,17 +16,16 @@ const ActiveUsersStyles = styled.div`
   overflow: hidden;
   /* padding-right: 2em; */
 
-  @media (min-width: ${MEDIA['medium']}) {
+  @media (min-width: ${MEDIA['large']}) {
     bottom: 2em;
     left: 2em;
     width: calc(100% - 4em);
   }
 
-  
   &.navOpen {
-    width: 66%;
+    width: calc(100% - 8em);
 
-    @media (min-width: ${MEDIA['medium']}) {
+    @media (min-width: ${MEDIA['large']}) {
       width: 33%;
     }
 
@@ -46,9 +45,14 @@ const ActiveUsersStyles = styled.div`
     list-style: none;
     padding: 0.5em 0;
     margin: 0;
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: hidden;
     text-align: left;
     display: flex;
+    
+    @media (max-width: ${MEDIA['medium']}) {
+      overflow-x: auto;
+    }
 
     li {
       white-space: nowrap;

@@ -1,5 +1,5 @@
 // import logo from './logo.svg';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import NavContainer from './components/NavContainer';
 import VideoContainer from './components/VideoContainer';
 import navTree from './navigationTree';
@@ -9,12 +9,12 @@ import ActiveUsers from './components/ActiveUsers';
 function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
 
-    // if (isNavOpen && deltaY < -touchThreshold) {
-    //   setIsNavOpen(false); // Collapse the nav if deltaY is negative and nav is open
-    // } else if (!isNavOpen && deltaY > touchThreshold) {
-    //   setIsNavOpen(true); // Expand the nav if deltaY is positive and nav is closed
-    // }
-
+  useEffect(() => {
+    // First we get the viewport height and we multiple it by 1% to get a value for a vh unit
+    let vh = window.innerHeight * 0.01;
+    // Then we set the value in the --vh custom property to the root of the document
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }, []);
 
   return (
     <div 

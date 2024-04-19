@@ -22,6 +22,7 @@ body {
   color: var(--colorNeutral);
   background-color: var(--colorPurple);
   font-size: 12px;
+  overscroll-behavior: contain; /* Prevent mobile device from refreshing when dragging */
 }
 
 @keyframes pulsateSize {

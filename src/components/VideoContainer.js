@@ -8,6 +8,7 @@ import videoContainerBackground from '../images/video-background.jpg';
 const VideoContainerStyles = styled.div`
   position: fixed;
   height: 100vh;
+  height: calc(var(--vh, 1vh) * 100); // Adapt to mobile
   width: 100vw;
   top: 0;
   left: 0;
@@ -15,7 +16,7 @@ const VideoContainerStyles = styled.div`
   background-size: cover;
   padding: 6em 1em 1em 1em;
   
-  @media (min-width: ${MEDIA['medium']}) {
+  @media (min-width: ${MEDIA['large']}) {
     padding: 7em 2em 2em 2em;
   }
   
@@ -81,10 +82,9 @@ const VideoContainer = ({isNavOpen}) => {
   }, [isNavOpen])
 
   return <VideoContainerStyles>
-    {/* TODO: click to start */}
     <div className={`videoWrapper ${initiated ? '' : 'notInitiated'}`}>
       <video id="mainVideo" width="100%" height="100%">
-        <source src="http://static.balthazaurus.com/iris-prototype.mp4" type="video/mp4" />
+        <source src="https://static.balthazaurus.com/iris-prototype.mp4?v=2" type="video/mp4" />
       </video>
       {!initiated && <button type="button" className="play" onClick={handleInitiate}>Play</button>}
     </div>

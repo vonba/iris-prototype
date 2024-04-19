@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import NavItem from "./NavItem";
 import styled from "styled-components";
 
-import navContainerBackground from '../images/nav-background.png';
+import navContainerBackground from '../images/nav-background.jpg';
 import unfoldMore from '../images/unfold-more.svg';
 import unfoldLess from '../images/unfold-less.svg';
 import { MEDIA } from "../constants";
@@ -19,7 +19,7 @@ const NavContainerStyles = styled.div`
   background: var(--colorPurple) url("${navContainerBackground}") center no-repeat;
   background-size: cover;
 
-  @media (min-width: ${MEDIA['medium']}) {
+  @media (min-width: ${MEDIA['large']}) {
     top: 2em;
     left: 2em;
     width: calc(100% - 4em);
@@ -105,8 +105,19 @@ const NavContainerStyles = styled.div`
   &.open {
     height: calc(100vh - 2em);
     
-    @media (min-width: ${MEDIA['medium']}) {
+    // Allow for nav bar on phone
+    @media (max-width: ${MEDIA['large']}) {
+      height: calc(var(--vh, 1vh) * 100 - 2em);
+    }
+    
+    @media (min-width: ${MEDIA['large']}) {
+      bottom: 2em;
       height: calc(100vh - 4em);
+    }
+
+    .treeGrid {
+      min-width: 1500px;
+      min-height: 1000px;
     }
 
     .toggleNavigation {
@@ -184,9 +195,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     setIsNavOpen(!isNavOpen);
   }
 
-  const handleWheel = (e) => {
-    // e.preventDefault(); // Prevent default scrolling behavior
-  
+  const handleWheel = (e) => {  
     // Modify treeWrapper's position based on the wheel delta
     const treeWrapper = document.querySelector('.treeWrapper');
     treeWrapper.style.left = `${treeWrapper.offsetLeft - e.deltaX}px`; // Horizontal movement
@@ -209,6 +218,13 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     gridTemplateColumns: `repeat(${navColumns}, auto)`, 
     gridTemplateRows: `repeat(${navRows}, auto)`
   };
+
+  const centerTree = () => {
+    // Reset position when closing
+    const treeWrapper = document.querySelector('.treeWrapper');
+    treeWrapper.style.left = `-${treeWrapper.offsetWidth / 4}px`;
+    treeWrapper.style.top = `-${treeWrapper.offsetHeight / 4}px`;
+  }
 
   // Set size and position of link elements when any expanded state changes
   useEffect(() => {
@@ -285,19 +301,25 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
 
     setLinkBoxPosition();
 
+    // Update on resize 
+    window.addEventListener('resize', setLinkBoxPosition);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', setLinkBoxPosition);
+    };
+  }, [isNavOpen, expandedBranch]);
+
+  // Reset when opening/closing
+  useEffect(() => {
     if (!isNavOpen) {
-      // Reset position when closing
       const treeWrapper = document.querySelector('.treeWrapper');
       treeWrapper.style.left = '0px';
       treeWrapper.style.top = '0px';
+    } else {
+      centerTree();
     }
-
-    // Update on resize (currently disabled)
-    // window.addEventListener('resize', setLinkBoxPosition);
-    // return () => {
-    //   window.removeEventListener('resize', setLinkBoxPosition);
-    // };
-  }, [isNavOpen, expandedBranch]);
+  }, [isNavOpen])
 
   return (
     <NavContainerStyles

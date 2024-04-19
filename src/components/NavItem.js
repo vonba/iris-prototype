@@ -132,6 +132,7 @@ const NavItemStyles = styled.div`
       border-radius: 0.25em;
       margin-top: -5em;
       margin-left: -3em;
+      animation: pulsateOpacity 3s infinite;
 
       // These represent example users
       &.sister1 {
