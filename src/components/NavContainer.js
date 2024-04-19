@@ -196,6 +196,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
   };
   
   const handleTouchMove = (e) => {
+    e.preventDefault();
     handleMove(e, true);
   };
 
