@@ -17,17 +17,18 @@ const ActiveUsersStyles = styled.div`
   /* padding-right: 2em; */
 
   @media (min-width: ${MEDIA['large']}) {
+    // On desktop we increase the main layout margin to 2em
     bottom: 2em;
     left: 2em;
     width: calc(100% - 4em);
   }
 
   &.navOpen {
-    width: calc(100% - 8em);
+    /* width: calc(100% - 8em);
 
     @media (min-width: ${MEDIA['large']}) {
       width: 33%;
-    }
+    } */
 
     &::before {
       position: absolute;

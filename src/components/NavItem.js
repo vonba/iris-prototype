@@ -5,6 +5,9 @@ import thumbnail1 from '../images/thumbnail1.jpg';
 import thumbnail2 from '../images/thumbnail2.jpg';
 import thumbnail3 from '../images/thumbnail3.jpg';
 import thumbnail4 from '../images/thumbnail4.jpg';
+import thumbnail5 from '../images/thumbnail5.jpg';
+import thumbnail6 from '../images/thumbnail6.jpg';
+import thumbnail7 from '../images/thumbnail7.jpg';
 import profileSister1 from '../images/profile-sister1.jpg';
 import profileSister2 from '../images/profile-sister2.jpg';
 import lockIconLight from '../images/lock-light.svg';
@@ -81,6 +84,14 @@ const NavItemStyles = styled.div`
         background: var(--colorNeutral) url("${thumbnail4}") center no-repeat;
         background-size: cover;
       }
+      &.red {
+        background: var(--colorPink) url("${thumbnail5}") center no-repeat;
+        background-size: cover;
+      }
+      &.purple {
+        background: var(--colorPurple) url("${thumbnail6}") center no-repeat;
+        background-size: cover;
+      }
       
       &:hover {
         border-color: var(--colorPink);
@@ -96,6 +107,12 @@ const NavItemStyles = styled.div`
         }
         &.neutral::after {
           background-color: var(--colorNeutral);
+        }
+        &.red::after {
+          background-color: var(--colorPink);
+        }
+        &.purple::after {
+          background-color: var(--colorPurple);
         }
 
       }
@@ -316,15 +333,17 @@ const NavItemStyles = styled.div`
   }
 `;
 
-const colorOptions = ['blue', 'pink', 'green', 'neutral'];
+const colorOptions = ['red', 'purple', 'blue', 'pink', 'green', 'neutral'];
 
-const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranch, setExpandedBranch}) => {
+const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExpandedBranches}) => {
   const handleSelectItem = () => { 
-    if (navItem.type === 'branch' && !navItem.disabled) {
-      if (expandedBranch === id) {
-        setExpandedBranch(null);
+    if (isNavOpen && navItem.type === 'branch' && !navItem.disabled) {
+      if (expandedBranches.includes(id)) {
+        // Remove id from expanded branches
+        setExpandedBranches(expandedBranches.filter(branchId => branchId !== id));
       } else {
-        setExpandedBranch(id)
+        // Add id to expanded branches
+        setExpandedBranches([...expandedBranches, id])
       }
     }
   }
@@ -337,7 +356,7 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranch, setExpan
 
   return <NavItemStyles 
     id={id} 
-    className={`navItem ${navItem.type} ${isNavOpen ? 'open' : 'closed'} ${navItem.disabled ? 'disabled' : ''} ${expandedBranch === id ? 'expanded' : ''}`} 
+    className={`navItem ${navItem.type} ${isNavOpen ? 'open' : 'closed'} ${navItem.disabled ? 'disabled' : ''} ${expandedBranches.includes(id) ? 'expanded' : ''}`} 
     key={navItem.name}
   >
     <div className="title" role="navigation" onClick={handleSelectItem}>

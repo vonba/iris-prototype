@@ -1,14 +1,18 @@
 /* Global app styles */
 
 :root {
+  /* Colours */
   --colorNeutral: #F0E8EB;
   --colorPink: #FEADD9;
   --colorGreen: #00FF94;
   --colorBlue: #68E4FF;
   --colorPurple: #7d007b;
   --colorOverlay: rgba(0, 0, 0, 0.5);
+  /* Sizes */
   --defaultRadius: 2em;
   --nodeHeight: 6em;
+  --minVideoHeight: 10em;
+  --activeUsersHeight: 2.5em;
 }
 
 * {

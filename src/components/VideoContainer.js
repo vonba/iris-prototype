@@ -14,10 +14,10 @@ const VideoContainerStyles = styled.div`
   left: 0;
   background: var(--colorPurple) url("${videoContainerBackground}") center no-repeat;
   background-size: cover;
-  padding: 6em 1em 1em 1em;
+  padding: 6em 1em calc(3em + var(--activeUsersHeight)) 1em;
   
   @media (min-width: ${MEDIA['large']}) {
-    padding: 7em 2em 2em 2em;
+    padding: 7em 2em calc(4em + var(--activeUsersHeight)) 2em;
   }
   
   .videoWrapper {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NavItem from "./NavItem";
 import styled from "styled-components";
 
@@ -41,8 +41,10 @@ const NavContainerStyles = styled.div`
     transition: all 0.5s;
     text-indent: -9999em;
     
-    &:hover {
-      background-color: var(--colorBlue);
+    @media (min-width: ${MEDIA['large']}) {
+      &:hover {
+        background-color: var(--colorBlue);
+      }
     }
   }
 
@@ -58,23 +60,6 @@ const NavContainerStyles = styled.div`
   .treeGrid {
     display: grid;
     /* position: relative; */
-  }
-
-  &.closed {
-    .treeGrid {
-      display: flex;
-    }
-
-    .toggleNavigation::before {
-      content: '';
-      display: block;
-      position: absolute;
-      height: 4em;
-      width: 1em;
-      left: -1em;
-      top: 0;
-      background-image: linear-gradient(to right, transparent, var(--colorPurple));
-    }
   }
 
   .cell-link {
@@ -100,19 +85,37 @@ const NavContainerStyles = styled.div`
     .cell-link {
       display: none;
     }
+
+    .treeGrid {
+      display: flex;
+    }
+
+    .toggleNavigation::before {
+      content: '';
+      display: block;
+      position: absolute;
+      height: 4em;
+      width: 1em;
+      left: -1em;
+      top: 0;
+      background-image: linear-gradient(to right, transparent, var(--colorPurple));
+    }
   }
 
   &.open {
-    height: calc(100vh - 2em);
+    /* height: calc(100vh - 2em); */
+    // Using the --vh variable which is set through JS to get accurate viewport height on mobile devices
+    height: calc(var(--vh, 1vh) * 100 - var(--minVideoHeight) - var(--activeUsersHeight));
     
     // Allow for nav bar on phone
-    @media (max-width: ${MEDIA['large']}) {
+    /* @media (max-width: ${MEDIA['large']}) {
       height: calc(var(--vh, 1vh) * 100 - 2em);
-    }
+    } */
     
     @media (min-width: ${MEDIA['large']}) {
+      // On desktop we increase the main layout margin to 2em
       bottom: 2em;
-      height: calc(100vh - 4em);
+      height: calc(100vh - 2em - var(--minVideoHeight) - var(--activeUsersHeight));
     }
 
     .treeGrid {
@@ -133,7 +136,12 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
 
   const [startXY, setStartXY] = useState([0,0]);
   const [dragStarted, setDragStarted] = useState(false);
-  const [expandedBranch, setExpandedBranch] = useState(null);
+  
+  const defaultExpandedBranches = ['cell-1-8', 'cell-5-8']; // Hardcoded starting state for our prototype
+  const [expandedBranches, setExpandedBranches] = useState(defaultExpandedBranches);
+
+  const treeWrapperRef = useRef(null);
+  const navContainerRef = useRef(null);
 
   // ==== Handle map drag interactions ====
   const handleStart = (e) => {
@@ -154,27 +162,21 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
   const handleMove = (e, isTouch = false) => {
     if (!dragStarted && !isTouch) return; // Ignore if drag hasn't started
     
+    const treeWrapper = treeWrapperRef.current;
+    
+    // Get mouse/touch coordinates
     const currentX = e.clientX || e.touches[0].clientX;
     const currentY = e.clientY || e.touches[0].clientY;
     const deltaX = currentX - startXY[0];
     const deltaY = currentY - startXY[1];
   
-    const treeWrapper = document.querySelector('.treeWrapper');
+    let newLeft = treeWrapper.offsetLeft + deltaX;
     
-    // Check if treeWrapper is bigger than the container
-    // const container = document.querySelector('#navContainer');
-    // if (treeWrapper.offsetWidth > container.offsetWidth || treeWrapper.offsetHeight > container.offsetHeight) {
-    //   // Calculate new position
-    //   const newLeft = Math.min(0, Math.max(container.offsetWidth - treeWrapper.offsetWidth, treeWrapper.offsetLeft + deltaX));
-    //   const newTop = Math.min(0, Math.max(container.offsetHeight - treeWrapper.offsetHeight, treeWrapper.offsetTop + deltaY));
-    
-    //   // Apply new position
-    //   treeWrapper.style.left = `${newLeft}px`;
-    //   treeWrapper.style.top = `${newTop}px`;
-    // }
-    
-    const newLeft = treeWrapper.offsetLeft + deltaX;
+    // Don't move beyond horizontal boundaries
+    if (!isNavOpen && newLeft > 0) newLeft = 0;
+    if (!isNavOpen && (newLeft + treeWrapper.offsetWidth) < (navContainerRef.current.offsetWidth - 100)) return;
     treeWrapper.style.left = `${newLeft}px`;
+
     // Only do vertical movement if nav is open
     if (isNavOpen) {
       const newTop = treeWrapper.offsetTop + deltaY;
@@ -191,21 +193,25 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     document.body.style.userSelect = '';
   };
 
-  const handleNavToggle = () => {
+  const handleNavToggle = (event) => {
     setIsNavOpen(!isNavOpen);
+    // Blur the button
+    const buttonElement = event.target;
+    buttonElement.blur();
   }
 
   const handleWheel = (e) => {  
     // Modify treeWrapper's position based on the wheel delta
-    const treeWrapper = document.querySelector('.treeWrapper');
+    const treeWrapper = treeWrapperRef.current;
     treeWrapper.style.left = `${treeWrapper.offsetLeft - e.deltaX}px`; // Horizontal movement
     if (isNavOpen) {
       treeWrapper.style.top = `${treeWrapper.offsetTop - e.deltaY}px`; // Vertical movement
     }
+    // TODO: constrain horizontally when !isNavOpen
   };
   
   const handleTouchMove = (e) => {
-    e.preventDefault();
+    // e.preventDefault();
     handleMove(e, true);
   };
 
@@ -221,7 +227,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
 
   const centerTree = () => {
     // Reset position when closing
-    const treeWrapper = document.querySelector('.treeWrapper');
+    const treeWrapper = treeWrapperRef.current;
     treeWrapper.style.left = `-${treeWrapper.offsetWidth / 4}px`;
     treeWrapper.style.top = `-${treeWrapper.offsetHeight / 4}px`;
   }
@@ -308,12 +314,12 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     return () => {
       window.removeEventListener('resize', setLinkBoxPosition);
     };
-  }, [isNavOpen, expandedBranch]);
+  }, [isNavOpen, expandedBranches]);
 
   // Reset when opening/closing
   useEffect(() => {
     if (!isNavOpen) {
-      const treeWrapper = document.querySelector('.treeWrapper');
+      const treeWrapper = treeWrapperRef.current;
       treeWrapper.style.left = '0px';
       treeWrapper.style.top = '0px';
     } else {
@@ -332,10 +338,11 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
       onTouchEnd={handleEnd}
       onTouchMove={handleTouchMove}
       onWheel={handleWheel}
+      ref={navContainerRef}
       // onTouchStart={handleStart}
       // onTouchEnd={handleEnd}
     >
-      <div className="treeWrapper">
+      <div className="treeWrapper" ref={treeWrapperRef}>
         <div className="treeGrid" style={treeGridStyles}>
           {/* {navTree.map(navItem => showNavItem(navItem))} */}
           {navTree.map((navRow, indexRow) => {
@@ -351,8 +358,8 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
                       setIsNavOpen={setIsNavOpen}
                       id={navItemId} 
                       key={navItemId}
-                      expandedBranch={expandedBranch}
-                      setExpandedBranch={setExpandedBranch}
+                      expandedBranches={expandedBranches}
+                      setExpandedBranches={setExpandedBranches}
                     /> 
                   : null
                 }
