@@ -11,8 +11,8 @@
   /* Sizes */
   --defaultRadius: 2em;
   --nodeHeight: 6em;
-  --minVideoHeight: 10em;
-  --activeUsersHeight: 2.5em;
+  --minVideoHeight: 120px;
+  --activeUsersHeight: 30px;
 }
 
 * {
@@ -27,6 +27,11 @@ body {
   background-color: var(--colorPurple);
   font-size: 12px;
   overscroll-behavior: contain; /* Prevent mobile device from refreshing when dragging */
+  overflow: hidden;
+  background: var(--colorPurple) url("images/video-background.jpg") center no-repeat;
+  background-size: cover;
+  height: 100vh;
+  user-select: none;
 }
 
 @keyframes pulsateSize {
