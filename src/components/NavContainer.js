@@ -3,19 +3,21 @@ import NavItem from "./NavItem";
 import styled from "styled-components";
 
 import navContainerBackground from '../images/nav-background.jpg';
-import unfoldMore from '../images/unfold-more.svg';
-import unfoldLess from '../images/unfold-less.svg';
+// import unfoldMore from '../images/unfold-more.svg';
+// import unfoldLess from '../images/unfold-less.svg';
 import { MEDIA } from "../constants";
 
 const NavContainerStyles = styled.div`
+  --navContainerMinHeight: 48px;
+
   position: fixed;
   z-index: 9;
   width: calc(100% - 2em);
+  height: var(--navContainerMinHeight); // Starting height
   border-radius: var(--defaultRadius);
   top: 1em;
   left: 1em;
   overflow: hidden;
-  transition: height 0.5s;
   background: var(--colorPurple) url("${navContainerBackground}") center no-repeat;
   background-size: cover;
 
@@ -25,29 +27,6 @@ const NavContainerStyles = styled.div`
     width: calc(100% - 4em);
   }
 
-  .toggleNavigation {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 4em;
-    height: 4em;
-    border: none;
-    color: var(--colorPurple);
-    background: var(--colorPurple) url("${unfoldMore}") center no-repeat;
-    background-size: 1.5em;
-    padding: 1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.5s;
-    text-indent: -9999em;
-    
-    @media (min-width: ${MEDIA['large']}) {
-      &:hover {
-        background-color: var(--colorBlue);
-      }
-    }
-  }
-
   .treeWrapper {
     position: absolute;
     display: flex;
@@ -55,11 +34,6 @@ const NavContainerStyles = styled.div`
     justify-content: center;
     min-width: 100%;
     min-height: 100%;
-  }
-
-  .treeGrid {
-    display: grid;
-    /* position: relative; */
   }
 
   .cell-link {
@@ -79,9 +53,23 @@ const NavContainerStyles = styled.div`
     }
   }
 
-  &.closed {
-    height: 4em;
+  &.closed,
+  &.semi-closed {
+    // Gradient for overflow
+    &::after {
+      content: '';
+      display: block;
+      position: absolute;
+      height: 100%;
+      width: 3em;
+      right: 0;
+      top: 0;
+      background-image: linear-gradient(to right, transparent, var(--colorPurple));
+    }
+  }
 
+  &.semi-closed,
+  &.closed {
     .cell-link {
       display: none;
     }
@@ -89,50 +77,24 @@ const NavContainerStyles = styled.div`
     .treeGrid {
       display: flex;
     }
+  }
 
-    .toggleNavigation::before {
-      content: '';
-      display: block;
-      position: absolute;
-      height: 4em;
-      width: 1em;
-      left: -1em;
-      top: 0;
-      background-image: linear-gradient(to right, transparent, var(--colorPurple));
-    }
+  &.semi-closed {
+
   }
 
   &.open {
-    /* height: calc(100vh - 2em); */
-    // Using the --vh variable which is set through JS to get accurate viewport height on mobile devices
-    height: calc(var(--vh, 1vh) * 100 - var(--minVideoHeight) - var(--activeUsersHeight));
-    
-    // Allow for nav bar on phone
-    /* @media (max-width: ${MEDIA['large']}) {
-      height: calc(var(--vh, 1vh) * 100 - 2em);
-    } */
-    
-    @media (min-width: ${MEDIA['large']}) {
-      // On desktop we increase the main layout margin to 2em
-      bottom: 2em;
-      height: calc(100vh - 2em - var(--minVideoHeight) - var(--activeUsersHeight));
-    }
-
     .treeGrid {
+      display: grid;
       min-width: 1500px;
       min-height: 1000px;
-    }
-
-    .toggleNavigation {
-      border-top-left-radius: var(--defaultRadius);
-      background-image: url("${unfoldLess}");
-      border-top: 1px solid var(--colorNeutral); 
-      border-left: 1px solid var(--colorNeutral); 
     }
   }
 `;
 
-const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
+const NavContainer = ({ navContainerRef, navTree, navResizeStage, navResizeY, setSelectedContentNodes }) => {
+
+  const isNavOpen = navResizeStage === 'open';
 
   const [startXY, setStartXY] = useState([0,0]);
   const [dragStarted, setDragStarted] = useState(false);
@@ -141,7 +103,6 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
   const [expandedBranches, setExpandedBranches] = useState(defaultExpandedBranches);
 
   const treeWrapperRef = useRef(null);
-  const navContainerRef = useRef(null);
 
   // ==== Handle map drag interactions ====
   const handleStart = (e) => {
@@ -174,7 +135,7 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     
     // Don't move beyond horizontal boundaries
     if (!isNavOpen && newLeft > 0) newLeft = 0;
-    if (!isNavOpen && (newLeft + treeWrapper.offsetWidth) < (navContainerRef.current.offsetWidth - 100)) return;
+    if (!isNavOpen && (newLeft + treeWrapper.offsetWidth) < (navContainerRef.current.offsetWidth - 24)) return;
     treeWrapper.style.left = `${newLeft}px`;
 
     // Only do vertical movement if nav is open
@@ -193,17 +154,16 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     document.body.style.userSelect = '';
   };
 
-  const handleNavToggle = (event) => {
-    setIsNavOpen(!isNavOpen);
-    // Blur the button
-    const buttonElement = event.target;
-    buttonElement.blur();
-  }
-
   const handleWheel = (e) => {  
     // Modify treeWrapper's position based on the wheel delta
     const treeWrapper = treeWrapperRef.current;
-    treeWrapper.style.left = `${treeWrapper.offsetLeft - e.deltaX}px`; // Horizontal movement
+    
+    // Don't move beyond horizontal boundaries
+    let newLeft = treeWrapper.offsetLeft - e.deltaX;
+    if (!isNavOpen && newLeft > 0) newLeft = 0;
+    if (!isNavOpen && (newLeft + treeWrapper.offsetWidth) < (navContainerRef.current.offsetWidth - 24)) return;
+    
+    treeWrapper.style.left = `${newLeft}px`; // Horizontal movement
     if (isNavOpen) {
       treeWrapper.style.top = `${treeWrapper.offsetTop - e.deltaY}px`; // Vertical movement
     }
@@ -214,7 +174,6 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     // e.preventDefault();
     handleMove(e, true);
   };
-
   // ===== End interaction handlers ====
 
   // Format navigation grid
@@ -232,105 +191,111 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
     treeWrapper.style.top = `-${treeWrapper.offsetHeight / 4}px`;
   }
 
+  const setLinkBoxPositions = () => {
+    const linkBoxes = document.querySelectorAll('.cell-link');
+    linkBoxes.forEach(linkBox => {
+      const parentId = linkBox.getAttribute('data-parent-id');
+      const childId = linkBox.getAttribute('data-child-id');
+      const parentCell = document.getElementById(parentId);
+      const childCell = document.getElementById(childId);
+      
+      if (parentCell && childCell) {
+        const parentRect = parentCell.getBoundingClientRect();
+        const parentBox = {
+          top: parentCell.offsetTop, 
+          left: parentCell.offsetLeft,
+          right: parentCell.offsetLeft + parentRect.width,
+          bottom: parentCell.offsetTop + parentRect.height,
+          width: parentRect.width, 
+          height: parentRect.height
+        };
+        const childRect = childCell.getBoundingClientRect();
+        const childBox = {
+          top: childCell.offsetTop, 
+          left: childCell.offsetLeft, 
+          right: childCell.offsetLeft + childRect.width,
+          bottom: childCell.offsetTop + childRect.height,
+          width: childRect.width, 
+          height: childRect.height
+        };
+        
+        // Calculate position and dimensions based on orientation
+        const horizontalTuck = 40;
+        const titleHeightTuck = 20;
+        const gap = 10;
+        const orientation = linkBox.getAttribute('data-orientation');
+        let top, left, height, width;
+        switch (orientation) {
+          case 'top-right':
+            top = childBox.bottom - (childBox.height * 0.5);
+            left = parentBox.right - horizontalTuck;
+            height = parentBox.top - top + titleHeightTuck;
+            width = childBox.left - parentBox.right + horizontalTuck - gap;
+            break;
+          case 'bottom-right':
+            top = parentBox.bottom;
+            left = parentBox.right - horizontalTuck;
+            height = childBox.top - parentBox.bottom + (childBox.height * 0.5);
+            width = childBox.left - parentBox.right + horizontalTuck - gap;
+            break;
+          case 'bottom-left':
+            top = parentBox.bottom;
+            left = parentBox.left + horizontalTuck;
+            height = childBox.top - parentBox.bottom + (childBox.height * 0.5);
+            width = childBox.left - parentBox.left - horizontalTuck - gap;
+            break;
+          case 'top-left':
+            top = childBox.bottom - (childBox.height * 0.5); // Center left
+            left = parentBox.left + horizontalTuck;
+            height = parentBox.top - top;
+            width = childBox.left - parentBox.left - horizontalTuck - gap;
+            break;
+          default: break;
+        }
+      
+        // Set styles
+        linkBox.style.top = `${top}px`;
+        linkBox.style.left = `${left}px`;
+        linkBox.style.height = `${height}px`;
+        linkBox.style.width = `${width}px`;
+      }
+    });
+  };
+
   // Set size and position of link elements when any expanded state changes
   useEffect(() => {
-    const setLinkBoxPosition = () => {
-      const linkBoxes = document.querySelectorAll('.cell-link');
-      linkBoxes.forEach(linkBox => {
-        const parentId = linkBox.getAttribute('data-parent-id');
-        const childId = linkBox.getAttribute('data-child-id');
-        const parentCell = document.getElementById(parentId);
-        const childCell = document.getElementById(childId);
-        
-        if (parentCell && childCell) {
-          const parentRect = parentCell.getBoundingClientRect();
-          const parentBox = {
-            top: parentCell.offsetTop, 
-            left: parentCell.offsetLeft,
-            right: parentCell.offsetLeft + parentRect.width,
-            bottom: parentCell.offsetTop + parentRect.height,
-            width: parentRect.width, 
-            height: parentRect.height
-          };
-          const childRect = childCell.getBoundingClientRect();
-          const childBox = {
-            top: childCell.offsetTop, 
-            left: childCell.offsetLeft, 
-            right: childCell.offsetLeft + childRect.width,
-            bottom: childCell.offsetTop + childRect.height,
-            width: childRect.width, 
-            height: childRect.height
-          };
-          
-          // Calculate position and dimensions based on orientation
-          const horizontalTuck = 40;
-          const titleHeightTuck = 20;
-          const gap = 10;
-          const orientation = linkBox.getAttribute('data-orientation');
-          let top, left, height, width;
-          switch (orientation) {
-            case 'top-right':
-              top = childBox.bottom - (childBox.height * 0.5);
-              left = parentBox.right - horizontalTuck;
-              height = parentBox.top - top + titleHeightTuck;
-              width = childBox.left - parentBox.right + horizontalTuck - gap;
-              break;
-            case 'bottom-right':
-              top = parentBox.bottom;
-              left = parentBox.right - horizontalTuck;
-              height = childBox.top - parentBox.bottom + (childBox.height * 0.5);
-              width = childBox.left - parentBox.right + horizontalTuck - gap;
-              break;
-            case 'bottom-left':
-              top = parentBox.bottom;
-              left = parentBox.left + horizontalTuck;
-              height = childBox.top - parentBox.bottom + (childBox.height * 0.5);
-              width = childBox.left - parentBox.left - horizontalTuck - gap;
-              break;
-            case 'top-left':
-              top = childBox.bottom - (childBox.height * 0.5); // Center left
-              left = parentBox.left + horizontalTuck;
-              height = parentBox.top - top;
-              width = childBox.left - parentBox.left - horizontalTuck - gap;
-              break;
-            default: break;
-          }
-        
-          // Set styles
-          linkBox.style.top = `${top}px`;
-          linkBox.style.left = `${left}px`;
-          linkBox.style.height = `${height}px`;
-          linkBox.style.width = `${width}px`;
-        }
-      });
-    };
-
-    setLinkBoxPosition();
+    setLinkBoxPositions();
 
     // Update on resize 
-    window.addEventListener('resize', setLinkBoxPosition);
+    window.addEventListener('resize', setLinkBoxPositions);
 
     // Clean up
     return () => {
-      window.removeEventListener('resize', setLinkBoxPosition);
+      window.removeEventListener('resize', setLinkBoxPositions);
     };
-  }, [isNavOpen, expandedBranches]);
+  }, []);
+  
+  useEffect(() => {
+    setLinkBoxPositions();
+  }, [navResizeStage, navResizeY, expandedBranches]);
+
 
   // Reset when opening/closing
   useEffect(() => {
-    if (!isNavOpen) {
+    if (navResizeStage !== 'open') {
       const treeWrapper = treeWrapperRef.current;
       treeWrapper.style.left = '0px';
       treeWrapper.style.top = '0px';
-    } else {
+    }
+    if (navResizeStage === 'open') {
       centerTree();
     }
-  }, [isNavOpen])
+  }, [navResizeStage])
 
   return (
     <NavContainerStyles
       id="navContainer"
-      className={isNavOpen ? 'open' : 'closed'}
+      className={navResizeStage}
       onMouseDown={handleStart}
       onTouchStart={handleStart}
       onMouseMove={handleMove}
@@ -339,8 +304,6 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
       onTouchMove={handleTouchMove}
       onWheel={handleWheel}
       ref={navContainerRef}
-      // onTouchStart={handleStart}
-      // onTouchEnd={handleEnd}
     >
       <div className="treeWrapper" ref={treeWrapperRef}>
         <div className="treeGrid" style={treeGridStyles}>
@@ -348,52 +311,46 @@ const NavContainer = ({ navTree, isNavOpen, setIsNavOpen }) => {
           {navTree.map((navRow, indexRow) => {
             return navRow.map((navItem, indexColumn) => {
               const navItemId = `cell-${indexColumn + 1}-${indexRow + 1}`;
-              return <>
                 
-                {/* Add a navigation item in this cell */}
-                {navItem.name 
-                  ? <NavItem 
-                      navItem={navItem} 
-                      isNavOpen={isNavOpen}
-                      setIsNavOpen={setIsNavOpen}
-                      id={navItemId} 
-                      key={navItemId}
-                      expandedBranches={expandedBranches}
-                      setExpandedBranches={setExpandedBranches}
-                    /> 
-                  : null
-                }
-                
-                {/* If this item has children, add link elements */}
-                {navItem.children ? navItem.children.map((child, index) => {
-                  if (!child) return null;
-                  const corners = {
-                    0: 'top-right',
-                    1: 'bottom-right',
-                    2: 'bottom-left',
-                    3: 'top-left',
-                  };
-                  const corner = corners[index];
-                  return <div 
-                    id={`cell-link-${indexColumn}-${indexRow}-${index}`}
-                    key={`cell-link-${indexColumn}-${indexRow}-${index}`}
-                    className={`cell-link ${corner}`} 
-                    data-orientation={corner}
-                    data-parent-id={`cell-${indexColumn + 1}-${indexRow + 1}`} 
-                    data-child-id={`cell-${child[0]}-${child[1]}`}
-                  />;
-                }) : null}
+              // Add a navigation item in this cell
+              if(navItem.name) { 
+                return <NavItem 
+                  navItem={navItem} 
+                  navResizeStage={navResizeStage}
+                  id={navItemId} 
+                  key={navItemId}
+                  expandedBranches={expandedBranches}
+                  setExpandedBranches={setExpandedBranches}
+                  setSelectedContentNodes={setSelectedContentNodes}
+                >
+                  {/* If this item has children, add link elements */}
+                  {navItem.children ? navItem.children.map((child, index) => {
+                    if (!child) return null;
+                    const corners = {
+                      0: 'top-right',
+                      1: 'bottom-right',
+                      2: 'bottom-left',
+                      3: 'top-left',
+                    };
+                    const corner = corners[index];
+                    return <div 
+                      id={`${navItemId}-link-${index}`}
+                      key={`${navItemId}-link-${index}`}
+                      className={`cell-link ${corner}`} 
+                      data-orientation={corner}
+                      data-parent-id={navItemId} 
+                      data-child-id={`cell-${child[0]}-${child[1]}`}
+                    />;
+                  }) : null}
+                </NavItem> 
+              }
 
-                {/* Nothing in this cell, add an empty cell */}
-                {!navItem.name ? <div className="empty-cell" id={`cell-${indexColumn + 1}-${indexRow + 1}`} key={`cell-${indexColumn + 1}-${indexRow + 1}`} /> : null}
-              </>
+              //  Nothing in this cell, add an empty element
+              return <div className="empty-cell" id={navItemId} key={navItemId} />
             })
           })}
         </div>
       </div>
-      <button className="toggleNavigation" type="button" onClick={handleNavToggle}>
-        {isNavOpen ? 'Close' : 'Open'}
-      </button>
     </NavContainerStyles>
   );
 };
