@@ -3,8 +3,6 @@
 // where elements correpond to 4 corners like this:
 // 1: NE (north-east), 2: SE, 3: SW, 4: NW
 
-// TODO: you already watched state
-
 const navTree = [
   [{}, {}, {}, {}, {name: 'Talks', type: 'branch', leaves: [{name: 'Opening'}, {name: 'Liquid Feminine'}, {name: 'Marta Lindberg'}, {name: 'Shella Arnell'}, {name: 'Sara Utberg'}, {name: 'Manuelle Para'}, {name: 'Delphine Carter'}, {name: 'Amy Delvani'}]}],
   [{}, {}, {}, {}, {name: 'Practice', type: 'branch', leaves: [{name: 'Your Why'}, {name: 'Helene Bjork'}, {name: 'Marta Lindberg'}, {name: 'Shella Arnell'}, {name: 'Sara Utberg'}, {name: 'Manuelle Paradiso'}]}],
