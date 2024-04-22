@@ -13,7 +13,7 @@ import profileSister2 from '../images/profile-sister2.jpg';
 import lockIconLight from '../images/lock-light.svg';
 import liveIconGreen from '../images/live-on.png';
 import homeIconLight from '../images/home-light.svg';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // import homeIconBlue from '../images/home-blue.svg';
 // import homeIconPink from '../images/home-pink.svg';
 // import { MEDIA } from "../constants";
@@ -92,6 +92,10 @@ const NavItemStyles = styled.div`
         background: var(--colorPurple) url("${thumbnail6}") center no-repeat;
         background-size: cover;
       }
+      &.blue2 {
+        background: var(--colorBlue) url("${thumbnail7}") center no-repeat;
+        background-size: cover;
+      }
       
       &:hover {
         border-color: var(--colorPink);
@@ -114,7 +118,9 @@ const NavItemStyles = styled.div`
         &.purple::after {
           background-color: var(--colorPurple);
         }
-
+        &.blue2::after {
+          background-color: var(--colorBlue);
+        }
       }
     }
   }
@@ -200,8 +206,6 @@ const NavItemStyles = styled.div`
       white-space: nowrap;
     }
     .contents {
-      border-radius: var(--defaultRadius);
-      border: 2px solid var(--colorNeutral);
       height: var(--nodeHeight);
       display: flex;
       justify-content: center;
@@ -212,39 +216,34 @@ const NavItemStyles = styled.div`
   }
 
   &.live {
+    border-color: var(--colorGreen);
+
     .title {
       color: var(--colorGreen);
       background-image: url("${liveIconGreen}");
       animation: pulsateOpacity 2.5s infinite;
     }
-
-    .contents {
-      border-color: var(--colorGreen);
-    }
   }
 
   // Selected branch
   &.branch.expanded {
+    /* overflow: hidden; */
+    background-color: var(--colorPink);
+
     .title {
       padding-left: 1em;
-      color: var(--colorBlue);
+      /* color: var(--colorBlue); */
     }
 
-    /* .contents {
-      padding-bottom: 2em;
-    } */
-
     .leaves {
-      padding: 0.5em 1em;
+      margin-top: 0;
       height: var(--nodeHeight);
-      border: 2px solid var(--colorBlue);
-      border-radius: var(--defaultRadius);
+      padding: 0.5em 1em;
       background-color: var(--colorPink);
       display: inline-flex;
       gap: 0.5em;
-      margin-top: 0.5em;
       margin-bottom: 0;
-      overflow: hidden;
+      border-radius: var(--defaultRadius);
 
       li {
         position: relative;
@@ -252,8 +251,8 @@ const NavItemStyles = styled.div`
         background-size: cover;
         border-radius: 0.25em;
         border: 1px solid var(--colorNeutral);
-        width: 6em;
-        flex-basis: 6em;
+        width: 8em;
+        flex-basis: 8em;
         height: 100%;
         flex-shrink: 0;
         white-space: normal;
@@ -315,27 +314,112 @@ const NavItemStyles = styled.div`
     }
   }
   
-  // Surrounding navigation is closed
-  &.closed {    
+  // ==== Navigation sizing states ====
+  &.closed {
+    padding: 0.75em 1.5em 0.25em 0.5em;
+
+    &:not(.branch.expanded) {
+      .contents {
+        display: none;
+      }
+    }
+
+    &.branch.expanded {
+      padding: 0;
+      position: relative;
+
+      .title {
+        position: absolute;
+        top: 3.5em;
+      }
+
+      .contents .leaves {
+        height: auto;
+
+        li {
+          background: var(--colorNeutral);
+          color: var(--colorPurple);
+          border-radius: var(--defaultRadius);
+          padding: 0.25em 1em;
+          text-align: center;
+          width: auto;
+          flex-basis: auto;
+
+          .name {
+            display: inline-block;
+            white-space: nowrap;
+          }
+
+          &:hover {
+            background-color: var(--colorPurple);
+            color: var(--colorNeutral);
+
+            &::before {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+
+    .watcher {
+      display: none;
+    }
+  }
+
+  &.closed,
+  &.semi-closed {    
     border-radius: var(--defaultRadius);
     border: 1px solid var(--colorNeutral);
     height: 100%;
-    padding: 0.75em 1.5em 0.25em 0.5em;
     background-color: var(--colorOverlay);
 
-    &:not(.home):not(.live) {
+    &:not(.home):not(.live):not(.expanded) {
       display: none;
     }
 
     .contents {
-      display: none;
+      border-radius: var(--defaultRadius);
+    }
+  }
+
+  &.semi-closed {    
+    text-transform: none;
+    position: relative;
+    
+    .title {
+      position: absolute;
+      top: calc(100% + 0.5em);
+    }
+  }
+
+  &.open {
+
+    &.home,
+    &.live {
+      .contents {
+        border-radius: var(--defaultRadius);
+        border: 2px solid var(--colorNeutral);
+      }
+    }
+
+    &.branch.expanded {
+      background-color: transparent;
+
+      .leaves {
+        margin-top: 0.5em;
+        border: 2px solid var(--colorNeutral);
+      }
     }
   }
 `;
 
-const colorOptions = ['red', 'purple', 'blue', 'pink', 'green', 'neutral'];
+const colorOptions = ['red', 'purple', 'blue', 'blue2', 'pink', 'green', 'neutral'];
 
-const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExpandedBranches}) => {
+const NavItem = ({children, navItem, navResizeStage, id, expandedBranches, setExpandedBranches, setSelectedContentNodes}) => {
+  const isNavOpen = navResizeStage === 'open';
+  const contentRef = useRef(null);
+
   const handleSelectItem = () => { 
     if (isNavOpen && navItem.type === 'branch' && !navItem.disabled) {
       if (expandedBranches.includes(id)) {
@@ -348,6 +432,14 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExp
     }
   }
 
+  const handleNavClick = () => {
+    if ('home' === navItem.type) {
+      setSelectedContentNodes(contentRef);
+    } else {
+      setSelectedContentNodes(null);
+    }
+  }
+
   const [randomColors, setRandomColors] = useState([]);
   useEffect(() => {
     const newColors = Array.from({length: 12}, () => colorOptions[Math.floor(Math.random() * colorOptions.length)]);
@@ -356,8 +448,9 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExp
 
   return <NavItemStyles 
     id={id} 
-    className={`navItem ${navItem.type} ${isNavOpen ? 'open' : 'closed'} ${navItem.disabled ? 'disabled' : ''} ${expandedBranches.includes(id) ? 'expanded' : ''}`} 
+    className={`navItem ${navItem.type} ${navResizeStage} ${navItem.disabled ? 'disabled' : ''} ${expandedBranches.includes(id) ? 'expanded' : ''}`} 
     key={navItem.name}
+    onClick={handleNavClick}
   >
     <div className="title" role="navigation" onClick={handleSelectItem}>
       {navItem.name}
@@ -365,11 +458,11 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExp
     
     <div className="contents">
       {/* Thumbnails in a home screen */}
-      {navItem.type === 'home' && <ul className="thumbnails">
-        <li className={randomColors[0]} onClick={() => setIsNavOpen(false)} />
-        <li className={randomColors[1]} onClick={() => setIsNavOpen(false)} />
-        <li className={randomColors[2]} onClick={() => setIsNavOpen(false)} />
-        <li className={randomColors[3]} onClick={() => setIsNavOpen(false)} />
+      {navItem.type === 'home' && <ul ref={contentRef} className="thumbnails">
+        <li className={randomColors[0]} />
+        <li className={randomColors[1]} />
+        <li className={randomColors[2]} />
+        <li className={randomColors[3]} />
       </ul>}
       
       {/* Items on a storyline (branch) */}
@@ -377,9 +470,9 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExp
       && navItem.leaves 
       && <ul className="leaves">
         {navItem.leaves.map((leaf, index) => {
-          return <li key={`${id}-leaf-${index}`} onClick={() => setIsNavOpen(false)} className={randomColors[index]}>
+          return <li key={`${id}-leaf-${index}`} className={randomColors[index]}>
             <span className="name" role="navigation">{leaf.name}</span>
-            {leaf.watching && leaf.watching.map(watcher => <span className={`watcher ${watcher}`} />)}
+            {leaf.watching && leaf.watching.map((watcher, index) => <span key={`${id}-leaf-${index}-watcher-${index}`} className={`watcher ${watcher}`} />)}
           </li>
         })}
       </ul>}
@@ -391,6 +484,8 @@ const NavItem = ({navItem, isNavOpen, setIsNavOpen, id, expandedBranches, setExp
         <li>Starting 21 of May</li>
       </ul>}
     </div>
+
+    {children}
 
   </NavItemStyles>
 }
