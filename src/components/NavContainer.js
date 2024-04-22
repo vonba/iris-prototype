@@ -167,7 +167,6 @@ const NavContainer = ({ navContainerRef, navTree, navResizeStage, navResizeY, se
     if (isNavOpen) {
       treeWrapper.style.top = `${treeWrapper.offsetTop - e.deltaY}px`; // Vertical movement
     }
-    // TODO: constrain horizontally when !isNavOpen
   };
   
   const handleTouchMove = (e) => {
