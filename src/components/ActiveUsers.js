@@ -74,8 +74,8 @@ const ActiveUsersStyles = styled.div`
   }
 `;
 
-const ActiveUsers = ({isNavOpen}) => {
-  return <ActiveUsersStyles className={`${isNavOpen ? 'navOpen' : ''}`}>
+const ActiveUsers = () => {
+  return <ActiveUsersStyles>
     <ul className="activeUsers">
       <li className="online">Guest (You)</li>
       <li className="online">Simon Balthazar</li>
