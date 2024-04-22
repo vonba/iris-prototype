@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styled from "styled-components"
 import { MEDIA } from "../constants";
 
 import playIcon from '../images/play.svg';
-import videoContainerBackground from '../images/video-background.jpg';
+import thumbnail1 from '../images/thumbnail1.jpg';
+import thumbnail2 from '../images/thumbnail2.jpg';
+import thumbnail3 from '../images/thumbnail3.jpg';
+import thumbnail4 from '../images/thumbnail4.jpg';
+import thumbnail5 from '../images/thumbnail5.jpg';
+import thumbnail6 from '../images/thumbnail6.jpg';
+import thumbnail7 from '../images/thumbnail7.jpg';
 
 const VideoContainerStyles = styled.div`
   position: fixed;
-  height: 100vh;
-  height: calc(var(--vh, 1vh) * 100); // Adapt to mobile
+  height: 100%;
   width: 100vw;
-  top: 0;
+  bottom: 0;
   left: 0;
-  background: var(--colorPurple) url("${videoContainerBackground}") center no-repeat;
-  background-size: cover;
   padding: 6em 1em calc(3em + var(--activeUsersHeight)) 1em;
   
   @media (min-width: ${MEDIA['large']}) {
@@ -25,6 +28,7 @@ const VideoContainerStyles = styled.div`
     height: 100%;
     border-radius: var(--defaultRadius);
     overflow: hidden;
+    position: relative;
 
     &.notInitiated {
       video {
@@ -42,12 +46,14 @@ const VideoContainerStyles = styled.div`
   button.play {
     text-indent: -9999em;
     position: absolute;
-    width: 7em;
-    height: 7em;
-    left: calc(50% - 3.5em);
-    top: calc(50% - 3.5em);
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    /* margin-left: calc(50% - 3.5em);
+    margin-top: calc(50% - 3.5em); */
     background: transparent url("${playIcon}") center no-repeat;
-    background-size: contain;
+    background-size: 7em;
     border: none;
     animation: pulsateSize 2.5s infinite;
     filter: invert(1);
@@ -58,9 +64,58 @@ const VideoContainerStyles = styled.div`
       filter: none;
     }
   }
+
+  // Group of thumbnails in home screen
+  ul.thumbnails {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-rows: auto auto;
+    border-radius: var(--defaultRadius);
+    height: 100%;
+
+    li {
+      max-width: 100%;
+      max-height: 100%;
+      cursor: pointer;
+      transition: all 0.5s;
+      position: relative;
+
+      &.blue {
+        background: var(--colorBlue) url("${thumbnail1}") center no-repeat;
+        background-size: cover;
+      }
+      &.green {
+        background: var(--colorGreen) url("${thumbnail2}") center no-repeat;
+        background-size: cover;
+      }
+      &.pink {
+        background: var(--colorPink) url("${thumbnail3}") center no-repeat;
+        background-size: cover;
+      }
+      &.neutral {
+        background: var(--colorNeutral) url("${thumbnail4}") center no-repeat;
+        background-size: cover;
+      }
+      &.red {
+        background: var(--colorPink) url("${thumbnail5}") center no-repeat;
+        background-size: cover;
+      }
+      &.purple {
+        background: var(--colorPurple) url("${thumbnail6}") center no-repeat;
+        background-size: cover;
+      }
+      &.blue2 {
+        background: var(--colorBlue) url("${thumbnail7}") center no-repeat;
+        background-size: cover;
+      }
+    }
+  }
 `;
 
-const VideoContainer = ({isNavOpen}) => {
+const VideoContainer = ({selectedContentNodes, videoContainerRef}) => {
   const [initiated, setInitiated] = useState(false);
 
   const handleInitiate = () => {
@@ -68,25 +123,28 @@ const VideoContainer = ({isNavOpen}) => {
     const mainVideo = document.getElementById('mainVideo');
     mainVideo.play();
   }
-  
-  useEffect(() => {
-    const mainVideo = document.getElementById('mainVideo');
-    if (isNavOpen && !mainVideo.paused) {
-      mainVideo.pause();
-      mainVideo.setAttribute('data-play-interrupted', 'true');
-    }
-    if (!isNavOpen && mainVideo.getAttribute('data-play-interrupted') === 'true') {
-      mainVideo.play();
-      mainVideo.setAttribute('data-play-interrupted', 'false');
-    }
-  }, [isNavOpen])
 
-  return <VideoContainerStyles>
+  const renderContentNodes = (ref) => {
+    if (!ref || !ref.current) return null;
+    const innerHTML = ref.current.innerHTML;
+    return <ul className="thumbnails" dangerouslySetInnerHTML={{ __html: innerHTML }} />;
+  };
+
+  return <VideoContainerStyles ref={videoContainerRef}>
+    
     <div className={`videoWrapper ${initiated ? '' : 'notInitiated'}`}>
-      <video id="mainVideo" width="100%" height="100%">
+      {/* If any contents is passed to the component we show it */}
+      {selectedContentNodes && renderContentNodes(selectedContentNodes)}
+      
+      {/* Otherwise the default contents is this video */}
+      {!selectedContentNodes && <video id="mainVideo" width="100%" height="100%">
         <source src="https://static.balthazaurus.com/iris-prototype.mp4?v=2" type="video/mp4" />
-      </video>
-      {!initiated && <button type="button" className="play" onClick={handleInitiate}>Play</button>}
+      </video>}
+      
+      {/* The user must interact with the app before we can play the video */}
+      {!initiated && !selectedContentNodes 
+        && <button type="button" className="play" onClick={handleInitiate}>Play</button>
+      }
     </div>
   </VideoContainerStyles>
 }
